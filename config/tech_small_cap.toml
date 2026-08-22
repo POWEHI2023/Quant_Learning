@@ -1,0 +1,29 @@
+[backtest]
+start_date = "2021-01-01"
+end_date = "2025-12-31"
+initial_cash = 1000000.0
+benchmark = "000300.XSHG"
+rebalance = "monthly"
+
+[strategy]
+# 申万一级：电子、计算机、通信。行业成分按每个信号日动态查询。
+industry_codes = ["801080", "801750", "801770"]
+hold_count = 10
+min_listing_days = 250
+liquidity_lookback_days = 20
+min_average_turnover = 10000000.0
+allowed_exchange_suffixes = ["XSHG", "XSHE"]
+cash_buffer = 0.02
+
+[costs]
+commission_rate = 0.0003
+minimum_commission = 5.0
+stamp_duty_rate = 0.0005
+transfer_fee_rate = 0.00001
+slippage_bps = 5.0
+lot_size = 100
+
+[metrics]
+risk_free_rate = 0.02
+annual_trading_days = 252
+

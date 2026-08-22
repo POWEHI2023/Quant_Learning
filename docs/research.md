@@ -1,0 +1,24 @@
+# 调研依据与建模约定
+
+本项目在 2026-08-23 核对了以下资料：
+
+- [JQData 使用说明](https://www.joinquant.com/help/api/doc?id=9875&name=JQDatadoc)：安装登录、查询额度、`get_bars`、数据范围和更新时间。
+- [聚宽股票数据文档](https://www.joinquant.com/help/data/stock?f=home&m=footer)：`get_all_securities`、`get_extras('is_st')`、`get_industry_stocks` 和 `get_price` 的参数及返回形式。
+- [jqdatasdk 官方源码](https://github.com/JoinQuant/jqdatasdk)：当前 SDK 的函数签名与多标的 DataFrame 返回约定。
+- [聚宽行业概念数据](https://wttshf.demo.joinquant.com/help/api/plateData?f=home&m=footer)：申万一级行业代码；本策略采用电子 `801080`、计算机 `801750`、通信 `801770`。
+- [国家税务总局 2023 年第 39 号公告](https://fgk.chinatax.gov.cn/zcfgk/c102416/c5211343/content.html)：2023-08-28 起证券交易印花税减半征收。配置默认卖出印花税率为 0.05%，并允许用户覆盖。
+
+## 防止未来数据
+
+每月首个交易日开盘执行，选股信号只读取前一交易日及更早的数据。行业成分、证券列表、ST 状态和市值均显式传入信号日期。调仓计划和成交分为两个阶段，避免使用执行日收盘信息选股。
+
+## 第一版策略定义
+
+1. 合并信号日电子、计算机、通信行业成分股。
+2. 只保留沪深 A 股，剔除 ST、退市、上市不足 250 天和信号日停牌标的。
+3. 要求近 20 个交易日不少于 80% 有成交额记录，且日均成交额不低于 1000 万元。
+4. 按流通市值升序、总市值升序打破并列，持有前 10 只。
+5. 月度等权，保留 2% 现金缓冲，按 100 股整数手成交。
+
+回测包含佣金、最低佣金、卖出印花税、过户费、滑点、停牌以及开盘涨跌停约束。它仍是研究模型，不模拟盘口冲击、分时排队、券商差异或历史税费分段变化。
+

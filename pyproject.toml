@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jquant-tech-smallcap"
+version = "0.1.0"
+description = "A point-in-time local backtester for a JoinQuant small-cap technology strategy"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "jqdatasdk>=1.9.8,<2",
+  "numpy>=1.26,<3",
+  "pandas>=2.1,<4",
+  "tomli>=2.0; python_version < '3.11'",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8,<10",
+  "ruff>=0.9,<1",
+]
+
+[project.scripts]
+jquant = "jquant.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/jquant"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
