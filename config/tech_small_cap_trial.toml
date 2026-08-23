@@ -19,8 +19,9 @@ enabled_filters = [
   "valuation",
   "market_cap",
 ]
-hold_count = 10
-min_listing_days = 250
+hold_count = 30
+min_listing_days = 1190
+max_listing_days = -1
 liquidity_lookback_days = 20
 min_average_turnover = 10000000.0
 allowed_exchange_suffixes = ["XSHG", "XSHE"]
@@ -45,4 +46,3 @@ lot_size = 100
 [metrics]
 risk_free_rate = 0.02
 annual_trading_days = 252
-

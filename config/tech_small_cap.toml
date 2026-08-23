@@ -22,6 +22,7 @@ enabled_filters = [
 ]
 hold_count = 10
 min_listing_days = 250
+max_listing_days = -1
 liquidity_lookback_days = 20
 min_average_turnover = 10000000.0
 allowed_exchange_suffixes = ["XSHG", "XSHE"]

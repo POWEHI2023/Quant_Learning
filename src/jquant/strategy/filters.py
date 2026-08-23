@@ -3,6 +3,8 @@ from __future__ import annotations
 from collections.abc import Sequence
 from datetime import timedelta
 
+import pandas as pd
+
 from jquant.config import StrategyConfig
 from jquant.strategy.base import FilterContext, StockFilter
 
@@ -26,6 +28,7 @@ class ListingAgeFilter(StockFilter):
 
     def __init__(self, config: StrategyConfig) -> None:
         self.minimum_days = config.min_listing_days
+        self.maximum_days = config.max_listing_days
 
     def apply(self, codes: Sequence[str], context: FilterContext) -> list[str]:
         master = context.data.security_master(codes, context.signal_date)
@@ -36,6 +39,10 @@ class ListingAgeFilter(StockFilter):
             & master["end_date"].notna()
             & (master["end_date"] >= context.signal_date)
         )
+        if self.maximum_days != -1:
+            listing_dates = pd.to_datetime(master["start_date"])
+            listing_age = (pd.Timestamp(context.signal_date) - listing_dates).dt.days
+            mask &= listing_age.notna() & (listing_age <= self.maximum_days)
         return master[mask].index.astype(str).tolist()
 
 
@@ -191,4 +198,3 @@ def build_default_filters(config: StrategyConfig) -> list[StockFilter]:
         ValuationFilter(config),
         MarketCapFilter(),
     ]
-

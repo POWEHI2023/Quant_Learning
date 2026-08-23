@@ -148,3 +148,18 @@ def test_strategy_rejects_unregistered_filter() -> None:
 
     with pytest.raises(ValueError, match="未注册"):
         strategy.set_enabled_filters(["not_a_filter"])
+
+
+def test_listing_age_filter_can_set_maximum_days() -> None:
+    strategy = SmallCapTechStrategy(
+        StrategyConfig(
+            hold_count=4,
+            min_listing_days=250,
+            max_listing_days=400,
+            enabled_filters=("listing_age", "market_cap"),
+        )
+    )
+
+    selected = strategy.select(StrategyData(), date(2025, 1, 31))
+
+    assert selected == []

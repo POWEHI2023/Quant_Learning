@@ -28,6 +28,9 @@ jquant = "jquant.cli:main"
 [tool.hatch.build.targets.wheel]
 packages = ["src/jquant"]
 
+[tool.hatch.build]
+dev-mode-dirs = ["src"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"

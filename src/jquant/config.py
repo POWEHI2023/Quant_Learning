@@ -36,6 +36,7 @@ class StrategyConfig:
     )
     hold_count: int = 10
     min_listing_days: int = 250
+    max_listing_days: int = -1
     liquidity_lookback_days: int = 20
     min_average_turnover: float = 10_000_000.0
     allowed_exchange_suffixes: tuple[str, ...] = ("XSHG", "XSHE")
@@ -126,6 +127,12 @@ def validate_config(config: AppConfig) -> None:
         raise ValueError("第一版仅支持 monthly 调仓")
     if strategy.hold_count <= 0 or strategy.liquidity_lookback_days <= 0:
         raise ValueError("持仓数和流动性回看天数必须大于 0")
+    if strategy.min_listing_days < 0:
+        raise ValueError("min_listing_days 不能为负数")
+    if strategy.max_listing_days != -1 and (
+        strategy.max_listing_days < strategy.min_listing_days
+    ):
+        raise ValueError("max_listing_days 必须为 -1 或不小于 min_listing_days")
     if not strategy.enabled_filters:
         raise ValueError("enabled_filters 不能为空")
     if len(strategy.enabled_filters) != len(set(strategy.enabled_filters)):
