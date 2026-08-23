@@ -23,11 +23,30 @@ class BacktestConfig:
 @dataclass(frozen=True)
 class StrategyConfig:
     industry_codes: tuple[str, ...] = ("801080", "801750", "801770")
+    enabled_filters: tuple[str, ...] = (
+        "exchange",
+        "listing_age",
+        "st",
+        "liquidity",
+        "profitability",
+        "debt_ratio",
+        "growth",
+        "valuation",
+        "market_cap",
+    )
     hold_count: int = 10
     min_listing_days: int = 250
     liquidity_lookback_days: int = 20
     min_average_turnover: float = 10_000_000.0
     allowed_exchange_suffixes: tuple[str, ...] = ("XSHG", "XSHE")
+    min_roe: float = 5.0
+    max_debt_ratio: float = 0.70
+    min_revenue_growth: float = 0.0
+    min_net_profit_growth: float = 0.0
+    min_pe_ratio: float = 0.0
+    max_pe_ratio: float = 100.0
+    min_pb_ratio: float = 0.0
+    max_pb_ratio: float = 10.0
     cash_buffer: float = 0.02
 
 
@@ -83,7 +102,7 @@ def load_config(path: str | Path) -> AppConfig:
 
     backtest_raw["start_date"] = date.fromisoformat(backtest_raw["start_date"])
     backtest_raw["end_date"] = date.fromisoformat(backtest_raw["end_date"])
-    for key in ("industry_codes", "allowed_exchange_suffixes"):
+    for key in ("industry_codes", "enabled_filters", "allowed_exchange_suffixes"):
         if key in strategy_raw:
             strategy_raw[key] = tuple(strategy_raw[key])
 
@@ -107,6 +126,16 @@ def validate_config(config: AppConfig) -> None:
         raise ValueError("第一版仅支持 monthly 调仓")
     if strategy.hold_count <= 0 or strategy.liquidity_lookback_days <= 0:
         raise ValueError("持仓数和流动性回看天数必须大于 0")
+    if not strategy.enabled_filters:
+        raise ValueError("enabled_filters 不能为空")
+    if len(strategy.enabled_filters) != len(set(strategy.enabled_filters)):
+        raise ValueError("enabled_filters 不能包含重复项")
+    if not 0 <= strategy.max_debt_ratio <= 1:
+        raise ValueError("max_debt_ratio 必须位于 [0, 1]")
+    if not 0 <= strategy.min_pe_ratio < strategy.max_pe_ratio:
+        raise ValueError("PE 过滤区间必须满足 0 <= min_pe_ratio < max_pe_ratio")
+    if not 0 <= strategy.min_pb_ratio < strategy.max_pb_ratio:
+        raise ValueError("PB 过滤区间必须满足 0 <= min_pb_ratio < max_pb_ratio")
     if not 0 <= strategy.cash_buffer < 1:
         raise ValueError("cash_buffer 必须位于 [0, 1)")
     if costs.lot_size <= 0:
@@ -120,4 +149,3 @@ def validate_config(config: AppConfig) -> None:
     ):
         if value < 0:
             raise ValueError("交易成本参数不能为负数")
-

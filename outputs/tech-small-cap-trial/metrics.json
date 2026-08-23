@@ -1,0 +1,10 @@
+{
+  "total_return": 0.6940777612392708,
+  "annual_return": 0.9902981768807133,
+  "annual_volatility": 0.31983452081995073,
+  "sharpe_ratio": 3.0337506232697686,
+  "max_drawdown": -0.13813383565735793,
+  "final_equity": 1694077.7612392707,
+  "benchmark_return": 0.19486582328477975,
+  "excess_return": 0.49921193795449104
+}

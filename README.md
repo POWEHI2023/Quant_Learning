@@ -18,7 +18,7 @@ src/jquant/
 tests/                   # 不连接聚宽的单元测试
 ```
 
-数据源、策略与回测引擎通过 `MarketData` 协议连接。策略不知道如何登录聚宽，回测引擎也不知道小市值因子如何计算，因此可以分别替换和测试。
+数据源、策略与回测引擎通过 `MarketData` 协议连接。`BaseStrategy` 统一管理过滤器注册、启停和执行流水线；具体策略只负责构建初始股票池与最终排序。
 
 ## 快速开始
 
@@ -57,12 +57,62 @@ jquant run \
   --output outputs/tech-small-cap
 ```
 
+试用账号的历史权限窗口可使用预留了流动性回看期的配置：
+
+```bash
+jquant run --prompt-credentials \
+  --config config/tech_small_cap_trial.toml \
+  --output outputs/tech-small-cap-trial
+```
+
+查看策略已经实现、注册以及当前启用的过滤器：
+
+```bash
+jquant list-filters --config config/tech_small_cap.toml
+```
+
+`strategy.enabled_filters` 是按顺序执行的过滤器列表。删除名称可以停用条件，也可以在运行时调用 `strategy.set_enabled_filters([...])` 切换：
+
+```toml
+enabled_filters = [
+  "exchange", "listing_age", "st", "liquidity",
+  "profitability", "debt_ratio", "growth", "valuation", "market_cap",
+]
+```
+
 输出包括：
 
 - `equity_curve.csv`：净值、现金、市值、基准与日收益；
 - `orders.csv`：成交和因停牌/涨跌停/资金不足被拒绝的订单；
 - `rebalance_plans.csv`：信号日、执行日与目标组合；
 - `metrics.json`：收益、波动率、夏普、最大回撤和基准对比。
+
+## 可视化回测结果
+
+对任意包含上述输出文件的目录生成综合 PNG 报告：
+
+```bash
+jquant plot \
+  --input outputs/tech-small-cap-trial
+```
+
+默认生成 `outputs/tech-small-cap-trial/backtest_report.png`，包括：
+
+- 策略与基准累计净值；
+- 策略历史回撤；
+- 策略与基准月度收益；
+- 股票仓位和现金占比；
+- 收益、波动、夏普、最大回撤、订单及费用摘要。
+
+可以指定输出文件、分辨率，或在有桌面环境时保存后打开窗口：
+
+```bash
+jquant plot \
+  --input outputs/tech-small-cap-trial \
+  --output outputs/tech-small-cap-trial/report-high-res.png \
+  --dpi 240 \
+  --show
+```
 
 运行离线测试：
 
@@ -75,7 +125,7 @@ ruff check .
 
 - 前一交易日收盘后选股，下一交易日开盘成交；不会用执行日收盘数据选股。
 - 默认科技范围是申万一级电子、计算机、通信，行业成分按历史日期动态获取。
-- 默认按流通市值从小到大月度等权；上市不足 250 天、ST、停牌和低流动性股票被剔除。
+- 默认过滤 ROE、资产负债率、收入与净利润成长率、PE/PB；再按流通市值从小到大月度等权。
 - 行情使用前复权价格以处理公司行为，成本和整数手约束仍是近似模拟。
 - 税费参数是固定配置。跨越历史费率调整日进行严谨研究时，应扩展为按日期生效的成本模型。
 
@@ -83,4 +133,4 @@ ruff check .
 
 ## 扩展方向
 
-新增策略只需实现 `select(data, signal_date)`；新增数据供应商只需实现 `MarketData`。后续适合增加因子缓存、财务质量过滤、行业内市值中性、组合风险约束、历史分段税费和参数化实验。
+新增策略继承 `BaseStrategy`，注册所需过滤器并实现 `build_universe` 与 `rank`；新增过滤条件继承 `StockFilter`。新增数据供应商只需实现 `MarketData`。后续适合增加行业内市值中性、组合风险约束、历史分段税费和参数化实验。

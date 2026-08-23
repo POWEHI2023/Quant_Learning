@@ -71,22 +71,54 @@ class JQDataSource:
         status.name = "is_st"
         return status
 
-    def market_caps(self, codes: Sequence[str], as_of: date) -> pd.DataFrame:
-        columns = ["market_cap", "circulating_market_cap"]
+    def fundamentals(
+        self,
+        codes: Sequence[str],
+        as_of: date,
+        fields: Sequence[str],
+    ) -> pd.DataFrame:
+        columns = list(dict.fromkeys(fields))
         if not codes:
             return pd.DataFrame(columns=columns).rename_axis("code")
+        if not columns:
+            return pd.DataFrame(index=pd.Index(codes, name="code"))
+        jq = self._jq
+        field_map = {
+            "market_cap": (jq.valuation.market_cap, "market_cap"),
+            "circulating_market_cap": (
+                jq.valuation.circulating_market_cap,
+                "circulating_market_cap",
+            ),
+            "pe_ratio": (jq.valuation.pe_ratio, "pe_ratio"),
+            "pb_ratio": (jq.valuation.pb_ratio, "pb_ratio"),
+            "roe": (jq.indicator.roe, "roe"),
+            "revenue_growth": (
+                jq.indicator.inc_revenue_year_on_year,
+                "inc_revenue_year_on_year",
+            ),
+            "net_profit_growth": (
+                jq.indicator.inc_net_profit_year_on_year,
+                "inc_net_profit_year_on_year",
+            ),
+            "total_assets": (jq.balance.total_assets, "total_assets"),
+            "total_liability": (jq.balance.total_liability, "total_liability"),
+        }
+        unknown = set(columns) - set(field_map)
+        if unknown:
+            raise ValueError(f"不支持的基本面字段: {sorted(unknown)}")
+
         frames: list[pd.DataFrame] = []
-        valuation = self._jq.valuation
         for chunk in _chunks(codes, 800):
-            query = self._jq.query(
-                valuation.code,
-                valuation.market_cap,
-                valuation.circulating_market_cap,
-            ).filter(valuation.code.in_(chunk))
-            frames.append(self._jq.get_fundamentals(query, date=str(as_of)))
+            expressions = [field_map[field][0] for field in columns]
+            query = jq.query(jq.valuation.code, *expressions).filter(
+                jq.valuation.code.in_(chunk)
+            )
+            frames.append(jq.get_fundamentals(query, date=str(as_of)))
         frame = pd.concat(frames, ignore_index=True) if frames else pd.DataFrame()
         if frame.empty:
             return pd.DataFrame(columns=columns).rename_axis("code")
+        rename_map = {source_name: field for field, (_, source_name) in field_map.items()}
+        frame = frame.rename(columns=rename_map)
         return frame.set_index("code")[columns].sort_index()
 
     def daily_bars(

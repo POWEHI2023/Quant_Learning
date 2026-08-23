@@ -1,14 +1,13 @@
 [backtest]
-start_date = "2021-01-01"
-end_date = "2025-12-31"
+# 试用权限为前 15 个月至前 3 个月；起点额外预留流动性回看窗口。
+start_date = "2025-08-01"
+end_date = "2026-05-22"
 initial_cash = 1000000.0
 benchmark = "000300.XSHG"
 rebalance = "monthly"
 
 [strategy]
-# 申万一级：电子、计算机、通信。行业成分按每个信号日动态查询。
 industry_codes = ["801080", "801750", "801770"]
-# 按列表顺序执行；删除名称即可停用相应条件。
 enabled_filters = [
   "exchange",
   "listing_age",
@@ -46,3 +45,4 @@ lot_size = 100
 [metrics]
 risk_free_rate = 0.02
 annual_trading_days = 252
+

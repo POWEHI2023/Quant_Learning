@@ -18,7 +18,12 @@ class MarketData(Protocol):
 
     def st_status(self, codes: Sequence[str], as_of: date) -> pd.Series: ...
 
-    def market_caps(self, codes: Sequence[str], as_of: date) -> pd.DataFrame: ...
+    def fundamentals(
+        self,
+        codes: Sequence[str],
+        as_of: date,
+        fields: Sequence[str],
+    ) -> pd.DataFrame: ...
 
     def daily_bars(
         self,

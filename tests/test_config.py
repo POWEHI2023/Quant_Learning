@@ -7,6 +7,7 @@ def test_load_default_config() -> None:
     config = load_config(Path("config/tech_small_cap.toml"))
 
     assert config.strategy.industry_codes == ("801080", "801750", "801770")
+    assert "profitability" in config.strategy.enabled_filters
+    assert "debt_ratio" in config.strategy.enabled_filters
     assert config.strategy.hold_count == 10
     assert config.costs.lot_size == 100
-
