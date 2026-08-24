@@ -151,6 +151,28 @@ class JQDataSource:
     def query_count(self) -> dict[str, Any]:
         return self._jq.get_query_count()
 
+    def has_daily_access(self, code: str, on_date: date) -> bool:
+        """Return whether one known liquid security can be read on a trading day."""
+        try:
+            frame = self._jq.get_price(
+                code,
+                start_date=str(on_date),
+                end_date=str(on_date),
+                frequency="daily",
+                fields=["close"],
+                skip_paused=False,
+                fq="pre",
+                panel=False,
+            )
+        except Exception:
+            return False
+        return bool(
+            isinstance(frame, pd.DataFrame)
+            and not frame.empty
+            and "close" in frame
+            and frame["close"].notna().any()
+        )
+
 
 def _chunks(values: Sequence[str], size: int) -> Iterable[list[str]]:
     for start in range(0, len(values), size):

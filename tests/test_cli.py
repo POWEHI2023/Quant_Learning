@@ -23,3 +23,21 @@ def test_plot_accepts_input_and_output() -> None:
     assert args.command == "plot"
     assert args.input == "outputs/run"
     assert args.output == "report.png"
+
+
+def test_sync_data_accepts_output() -> None:
+    args = build_parser().parse_args(
+        ["sync-data", "--config", "example.toml", "--output", "cache"]
+    )
+
+    assert args.command == "sync-data"
+    assert args.output == "cache"
+
+
+def test_run_accepts_local_parquet_source() -> None:
+    args = build_parser().parse_args(
+        ["run", "--data-source", "parquet", "--data-dir", "cache"]
+    )
+
+    assert args.data_source == "parquet"
+    assert args.data_dir == "cache"

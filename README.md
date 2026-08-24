@@ -34,6 +34,9 @@ python -m pip install -e '.[dev]'
 
 ```bash
 jquant check-data --prompt-credentials
+jquant sync-data --prompt-credentials \
+  --config config/tech_small_cap.toml \
+  --output data/jqdata
 jquant run --prompt-credentials \
   --config config/tech_small_cap.toml \
   --output outputs/tech-small-cap
@@ -48,6 +51,28 @@ jquant check-data
 ```
 
 如果返回“未开通 JQData SDK 本地调用权限”，需先在[聚宽 SDK 申请页面](https://www.joinquant.com/default/index/sdk)开通本地数据权限。
+
+## 本地 Parquet 数据
+
+同步命令会探测账号当前可读取的连续日线日期区间，保存交易日历、科技行业月末历史成分、证券信息、ST 状态、策略使用的全部基本面字段，以及完整日线字段。数据按月和观察日分区，`manifest.json` 记录实际区间与行数：
+
+```bash
+jquant sync-data --prompt-credentials \
+  --config config/tech_small_cap.toml \
+  --output data/jqdata
+```
+
+同步完成后可断网运行同一套策略：
+
+```bash
+jquant run \
+  --data-source parquet \
+  --data-dir data/jqdata \
+  --config config/tech_small_cap_trial.toml \
+  --output outputs/tech-small-cap-local
+```
+
+本地数据默认由 `.gitignore` 排除。不要提交、公开或分发受许可约束的原始数据。
 
 编辑 [config/tech_small_cap.toml](config/tech_small_cap.toml)，然后运行：
 

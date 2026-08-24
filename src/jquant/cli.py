@@ -10,6 +10,8 @@ from jquant.backtest.metrics import finite_metrics
 from jquant.backtest.report import write_report
 from jquant.config import load_config
 from jquant.data.jqdata import JQDataSource
+from jquant.data.local import ParquetDataSource
+from jquant.data.sync import summary_json, sync_strategy_data
 from jquant.strategy.small_cap_tech import SmallCapTechStrategy
 from jquant.visualization import plot_backtest_output
 
@@ -22,6 +24,13 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--config", default="config/tech_small_cap.toml")
     run.add_argument("--output", default="outputs/tech-small-cap")
     run.add_argument(
+        "--data-source",
+        choices=("jqdata", "parquet"),
+        default="jqdata",
+        help="实时读取 JQData，或仅使用本地 Parquet 数据",
+    )
+    run.add_argument("--data-dir", default="data/jqdata", help="本地 Parquet 数据目录")
+    run.add_argument(
         "--prompt-credentials",
         action="store_true",
         help="交互式读取账号密码，不写入 shell 历史",
@@ -29,6 +38,16 @@ def build_parser() -> argparse.ArgumentParser:
 
     check = subparsers.add_parser("check-data", help="验证 JQData 登录并显示当日查询额度")
     check.add_argument(
+        "--prompt-credentials",
+        action="store_true",
+        help="交互式读取账号密码，不写入 shell 历史",
+    )
+    sync = subparsers.add_parser(
+        "sync-data", help="同步当前权限窗口内的策略数据为本地 Parquet"
+    )
+    sync.add_argument("--config", default="config/tech_small_cap.toml")
+    sync.add_argument("--output", default="data/jqdata")
+    sync.add_argument(
         "--prompt-credentials",
         action="store_true",
         help="交互式读取账号密码，不写入 shell 历史",
@@ -59,12 +78,22 @@ def main(argv: list[str] | None = None) -> None:
         print(f"可视化报告已写入: {destination}")
         return
     if args.command == "check-data":
-        source = _create_data_source(args.prompt_credentials)
+        source = _create_jqdata_source(args.prompt_credentials)
         print(json.dumps(source.query_count(), ensure_ascii=False, indent=2))
+        return
+    if args.command == "sync-data":
+        config = load_config(args.config)
+        source = _create_jqdata_source(args.prompt_credentials)
+        summary = sync_strategy_data(source, config.strategy, args.output)
+        print(summary_json(summary))
         return
 
     config = load_config(args.config)
-    source = _create_data_source(args.prompt_credentials)
+    source = (
+        ParquetDataSource(args.data_dir)
+        if args.data_source == "parquet"
+        else _create_jqdata_source(args.prompt_credentials)
+    )
     strategy = SmallCapTechStrategy(config.strategy)
     result = BacktestEngine(source, strategy, config).run()
     destination = write_report(result, Path(args.output))
@@ -72,7 +101,7 @@ def main(argv: list[str] | None = None) -> None:
     print(f"结果已写入: {destination.resolve()}")
 
 
-def _create_data_source(prompt_credentials: bool) -> JQDataSource:
+def _create_jqdata_source(prompt_credentials: bool) -> JQDataSource:
     if not prompt_credentials:
         return JQDataSource()
     username = getpass.getpass("JQData 账号: ")
